@@ -27,6 +27,14 @@ function getTeamInfo(teamID, completion) {
 	requestModule({ url: teamGoalURLPrefix + teamID }, function(error, response, body) {
 		if (!error && response.statusCode == 200) {
 			var teamInfo = JSON.parse(body);
+
+			// Calculate percentage toward goal
+			if (teamInfo.fundraisingGoal > 0) {
+				teamInfo.percentageTowardGoal = teamInfo.totalRaisedAmount / teamInfo.fundraisingGoal;
+			} else {
+				teamInfo.percentageTowardGoal = 0;
+			}
+				
 			teamInfo.members = [];
 			getRosterForTeam(teamInfo, completion);
 		} else {
