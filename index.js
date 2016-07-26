@@ -2,11 +2,13 @@ var express = require('express');
 var app = express();
 var requestModule = require("request")
 
-// TODO: take this from a URL query param
-var teamID = 29238
-
 app.get('/', function (req, res) {
-	getTeamInfo(teamID, function(teamInfo) {
+	// TODO: show help instead
+	res.send("Use <a href='team/29238'>team/29238</a>")
+});
+
+app.get('/team/:teamID', function (req, res) {
+	getTeamInfo(req.params.teamID, function(teamInfo) {
 		res.send(JSON.stringify(teamInfo))
 	});
 });
