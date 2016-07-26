@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var requestModule = require("request")
+var numeral = require("numeral")
 
 app.get('/', function (req, res) {
 	// TODO: show help instead
@@ -27,6 +28,10 @@ function getTeamInfo(teamID, completion) {
 	requestModule({ url: teamGoalURLPrefix + teamID }, function(error, response, body) {
 		if (!error && response.statusCode == 200) {
 			var teamInfo = JSON.parse(body);
+
+			// Format the dollar amounts
+			teamInfo.totalRaisedAmountFormatted = numeral(teamInfo.totalRaisedAmount).format('$0');
+			teamInfo.fundraisingGoalFormatted = numeral(teamInfo.fundraisingGoal).format('$0');
 
 			// Calculate percentage toward goal
 			if (teamInfo.fundraisingGoal > 0) {
@@ -66,6 +71,10 @@ function getIndividualInfo(teamInfo, peopleArray, startIndex, completion) {
 		requestModule({ url: personURL }, function(error, response, body) {
 			if (!error && response.statusCode == 200) {
 				var individualInfo = JSON.parse(body);
+
+				// Format the dollar amounts
+				individualInfo.totalRaisedAmountFormatted = numeral(individualInfo.totalRaisedAmount).format('$0');
+				individualInfo.fundraisingGoalFormatted = numeral(individualInfo.fundraisingGoal).format('$0');
 
 				// Calculate percentage toward goal
 				if (individualInfo.fundraisingGoal > 0) {
