@@ -29,22 +29,25 @@ function getTeamInfo(teamID, completion) {
 		if (!error && response.statusCode == 200) {
 			var teamInfo = JSON.parse(body);
 
-			// Format the dollar amounts
-			teamInfo.totalRaisedAmountFormatted = numeral(teamInfo.totalRaisedAmount).format('$0');
-			teamInfo.fundraisingGoalFormatted = numeral(teamInfo.fundraisingGoal).format('$0');
+			if (teamInfo.teamID > 0) {
+				// Format the dollar amounts
+				teamInfo.totalRaisedAmountFormatted = numeral(teamInfo.totalRaisedAmount).format('$0');
+				teamInfo.fundraisingGoalFormatted = numeral(teamInfo.fundraisingGoal).format('$0');
 
-			// Calculate percentage toward goal
-			if (teamInfo.fundraisingGoal > 0) {
-				teamInfo.percentageTowardGoal = teamInfo.totalRaisedAmount / teamInfo.fundraisingGoal;
+				// Calculate percentage toward goal
+				if (teamInfo.fundraisingGoal > 0) {
+					teamInfo.percentageTowardGoal = teamInfo.totalRaisedAmount / teamInfo.fundraisingGoal;
+				} else {
+					teamInfo.percentageTowardGoal = 0;
+				}
+					
+				teamInfo.members = [];
+				getRosterForTeam(teamInfo, completion);
 			} else {
-				teamInfo.percentageTowardGoal = 0;
+				completion({error: "Failed to fetch team"})
 			}
-				
-			teamInfo.members = [];
-			getRosterForTeam(teamInfo, completion);
 		} else {
-			// TODO: handle error
-			console.log(error);
+			completion({error: error})
 		}
 	});
 }
@@ -54,10 +57,14 @@ function getRosterForTeam(teamInfo, completion) {
 	requestModule({ url: rosterURL }, function(error, response, body) {
 		if (!error && response.statusCode == 200) {
 			var peopleArray = JSON.parse(body);
-			getIndividualInfo(teamInfo, peopleArray, 0, completion);
+			if (peopleArray) {
+				getIndividualInfo(teamInfo, peopleArray, 0, completion);
+			} else {
+				// Failed to fetch team members, but at least we have the team info
+				completion(teamInfo)
+			}
 		} else {
-			// TODO: handle error
-			console.log(error);
+			completion({error: error})
 		}
 	});
 }
@@ -72,24 +79,25 @@ function getIndividualInfo(teamInfo, peopleArray, startIndex, completion) {
 			if (!error && response.statusCode == 200) {
 				var individualInfo = JSON.parse(body);
 
-				// Format the dollar amounts
-				individualInfo.totalRaisedAmountFormatted = numeral(individualInfo.totalRaisedAmount).format('$0');
-				individualInfo.fundraisingGoalFormatted = numeral(individualInfo.fundraisingGoal).format('$0');
+				if (individualInfo) {
+					// Format the dollar amounts
+					individualInfo.totalRaisedAmountFormatted = numeral(individualInfo.totalRaisedAmount).format('$0');
+					individualInfo.fundraisingGoalFormatted = numeral(individualInfo.fundraisingGoal).format('$0');
 
-				// Calculate percentage toward goal
-				if (individualInfo.fundraisingGoal > 0) {
-					individualInfo.percentageTowardGoal = individualInfo.totalRaisedAmount / individualInfo.fundraisingGoal;
-				} else {
-					individualInfo.percentageTowardGoal = 0;
+					// Calculate percentage toward goal
+					if (individualInfo.fundraisingGoal > 0) {
+						individualInfo.percentageTowardGoal = individualInfo.totalRaisedAmount / individualInfo.fundraisingGoal;
+					} else {
+						individualInfo.percentageTowardGoal = 0;
+					}
+
+					teamInfo.members.push(individualInfo);
 				}
-
-				teamInfo.members.push(individualInfo);
 
 				// Fetch the next person
 				getIndividualInfo(teamInfo, peopleArray, startIndex + 1, completion);
 			} else {
-				// TODO: handle error
-				console.log(error);
+				completion({error: error})
 			}
 		});
 	}
