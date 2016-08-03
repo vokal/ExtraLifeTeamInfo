@@ -34,6 +34,10 @@ var teamRosterURLPrefix = "http://www.extra-life.org/index.cfm?fuseaction=donorD
 var individualGoalURLPrefix = "http://www.extra-life.org/index.cfm?fuseaction=donorDrive.participant&format=json&participantID=";
 
 
+/**
+ * teamID: ID of the team to fetch
+ * completion: Completion function. Called with the team object or an error object.
+ */
 function getTeamInfo(teamID, completion) {
 	requestModule({ url: teamGoalURLPrefix + teamID }, function(error, response, body) {
 		if (!error && response.statusCode == 200) {
@@ -64,7 +68,7 @@ function getTeamInfo(teamID, completion) {
 
 /**
  * teamInfo: Existing team object
- * completion: Completion function. Takes an object.
+ * completion: Completion function. Called with the team object or an error object.
  */
 function getRosterForTeam(teamInfo, completion) {
 	var rosterURL = teamRosterURLPrefix + teamInfo.teamID
@@ -107,7 +111,7 @@ function loadAllMembersIntoTeam(teamInfo, peopleArray, startIndex, completion) {
 
 /**
  * participantID: ID of the participant to load
- * completion: Completion block. Takes the participant object
+ * completion: Completion block. Called with the participant object, or nothing if there's an error.
  */
 function fetchParticipant(participantID, completion) {
 	var personURL = individualGoalURLPrefix + participantID;
