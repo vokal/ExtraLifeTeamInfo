@@ -14,6 +14,16 @@ app.get('/team/:teamID', function (req, res) {
 	});
 });
 
+app.get('/person/:participantID', function (req, res) {
+	fetchParticipant(req.params.participantID, function(personInfo) {
+		if (personInfo) {
+			res.send(JSON.stringify(personInfo))
+		} else {
+			res.send(JSON.stringify({error: "Failed to fetch participant"}))
+		}
+	});
+});
+
 app.listen(process.env.PORT || 3000, function(){
   console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
