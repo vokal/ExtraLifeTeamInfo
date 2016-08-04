@@ -14,6 +14,16 @@ app.get('/team/:teamID', function (req, res) {
 	});
 });
 
+app.get('/person/:participantID', function (req, res) {
+	fetchParticipant(req.params.participantID, function(personInfo) {
+		if (personInfo) {
+			res.send(JSON.stringify(personInfo))
+		} else {
+			res.send(JSON.stringify({error: "Failed to fetch participant"}))
+		}
+	});
+});
+
 app.listen(process.env.PORT || 3000, function(){
   console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
@@ -24,6 +34,10 @@ var teamRosterURLPrefix = "http://www.extra-life.org/index.cfm?fuseaction=donorD
 var individualGoalURLPrefix = "http://www.extra-life.org/index.cfm?fuseaction=donorDrive.participant&format=json&participantID=";
 
 
+/**
+ * teamID: ID of the team to fetch
+ * completion: Completion function. Called with the team object or an error object.
+ */
 function getTeamInfo(teamID, completion) {
 	requestModule({ url: teamGoalURLPrefix + teamID }, function(error, response, body) {
 		if (!error && response.statusCode == 200) {
@@ -52,13 +66,17 @@ function getTeamInfo(teamID, completion) {
 	});
 }
 
+/**
+ * teamInfo: Existing team object
+ * completion: Completion function. Called with the team object or an error object.
+ */
 function getRosterForTeam(teamInfo, completion) {
 	var rosterURL = teamRosterURLPrefix + teamInfo.teamID
 	requestModule({ url: rosterURL }, function(error, response, body) {
 		if (!error && response.statusCode == 200) {
 			var peopleArray = JSON.parse(body);
 			if (peopleArray) {
-				getIndividualInfo(teamInfo, peopleArray, 0, completion);
+				loadAllMembersIntoTeam(teamInfo, peopleArray, 0, completion);
 			} else {
 				// Failed to fetch team members, but at least we have the team info
 				completion(teamInfo)
@@ -69,12 +87,34 @@ function getRosterForTeam(teamInfo, completion) {
 	});
 }
 
-function getIndividualInfo(teamInfo, peopleArray, startIndex, completion) {
+/**
+ * teamInfo: Existing team object
+ * peopleArray: Array of participant objects
+ * startIndex: Index to start looping from
+ * completion: Completion function. Takes an object.
+ */
+function loadAllMembersIntoTeam(teamInfo, peopleArray, startIndex, completion) {
 	if (startIndex >= peopleArray.length) {
 		completion(teamInfo)
 	} else {
 		var person = peopleArray[startIndex];
-		var personURL = individualGoalURLPrefix + person.participantID;
+		fetchParticipant(person.participantID, function(participantObject) {
+			if (participantObject) {
+				teamInfo.members.push(participantObject);
+			}
+
+			// Fetch the next person
+			loadAllMembersIntoTeam(teamInfo, peopleArray, startIndex + 1, completion);
+		});
+	}
+}
+
+/**
+ * participantID: ID of the participant to load
+ * completion: Completion block. Called with the participant object, or nothing if there's an error.
+ */
+function fetchParticipant(participantID, completion) {
+	var personURL = individualGoalURLPrefix + participantID;
 		requestModule({ url: personURL }, function(error, response, body) {
 			if (!error && response.statusCode == 200) {
 				var individualInfo = JSON.parse(body);
@@ -90,15 +130,11 @@ function getIndividualInfo(teamInfo, peopleArray, startIndex, completion) {
 					} else {
 						individualInfo.percentageTowardGoal = 0;
 					}
-
-					teamInfo.members.push(individualInfo);
 				}
 
-				// Fetch the next person
-				getIndividualInfo(teamInfo, peopleArray, startIndex + 1, completion);
+				completion(individualInfo);
 			} else {
-				completion({error: error})
+				completion();
 			}
 		});
-	}
 }
