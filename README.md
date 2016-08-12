@@ -1,5 +1,5 @@
 # Extra Life Team Info
-API for consolidating team info into a single JSON object
+API for consolidating team info into a single JSON object. See an exmaple: https://extra-life-team-info.herokuapp.com/team/29238
 
 ## Warning
 This Node.js app was cobbled together sloppily by a mobile developer who wanted a quick leaderboard and some data for a prototype project. Do not use anything in here as an example of how anything should ever be done.
